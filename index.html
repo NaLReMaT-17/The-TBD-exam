@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Экзамен: Технологии баз данных</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: #eef2f5; line-height: 1.5; }
+        .app-container { display: flex; min-height: 100vh; width: 100%; }
+        .sidebar-left { width: 260px; background: #2c3e50; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        .nav-item { padding: 18px 25px; cursor: pointer; color: #ecf0f1; font-size: 1.3rem; font-weight: 500; border-left: 4px solid transparent; transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { background: #1e2a36; color: white; border-left-color: #4caf50; }
+        .content-right { flex: 1; padding: 30px 35px; background: #eef2f5; overflow-y: auto; }
+        .theory-card, .quiz-block { background: white; border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        h1 { font-size: 2rem; margin-bottom: 1rem; color: #2c3e50; border-left: 6px solid #4caf50; padding-left: 20px; }
+        h3 { font-size: 1.3rem; margin-bottom: 15px; color: #2980b9; }
+        .theory-list { display: flex; flex-direction: column; gap: 14px; }
+        .theory-item { background: #f9fafc; border-radius: 16px; padding: 15px 20px; border-left: 5px solid #3498db; }
+        .theory-question { font-weight: 800; font-size: 1.1rem; color: #1e4663; margin-bottom: 8px; }
+        .theory-answer { color: #2c3e50; font-size: 1rem; }
+        .quiz-question { background: #f9f9f9; padding: 18px; border-radius: 18px; margin-bottom: 20px; border: 1px solid #e0e7ed; }
+        .quiz-question p { font-weight: 700; margin-bottom: 10px; font-size: 1.05rem; }
+        .quiz-question label { display: block; margin: 8px 0 8px 24px; cursor: pointer; }
+        button { background: #3498db; border: none; color: white; padding: 12px 28px; border-radius: 40px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: 0.2s; }
+        button:hover { background: #2980b9; transform: scale(1.02); }
+        .quiz-btn { background: #e67e22; }
+        .result-block { background: #eaf7ea; border-left: 8px solid #27ae60; padding: 20px; border-radius: 20px; margin-top: 20px; }
+        .error-item { background: #fff5f5; border-left: 4px solid #e74c3c; padding: 12px; margin-bottom: 10px; border-radius: 12px; }
+        footer { text-align: center; margin-top: 40px; padding-top: 20px; color: #7f8c8d; border-top: 1px solid #d0dbe8; }
+        @media (max-width: 800px) {
+            .app-container { flex-direction: column; }
+            .sidebar-left { width: 100%; display: flex; justify-content: center; }
+            .nav-item { display: inline-block; text-align: center; flex: 1; }
+            .content-right { padding: 20px; }
+            h1 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="sidebar-left">
+        <div class="nav-item active" data-page="theory">📘 Теория (1–38)</div>
+        <div class="nav-item" data-page="quiz">📝 Тест по билетам</div>
+    </div>
+    <div class="content-right" id="content-right"></div>
+</div>
+
+<script>
+    // ========== ТЕОРИЯ (точные ответы из вашего сообщения) ==========
+    const theoryData = {
+        1: "БД — структурированная совокупность данных, хранимых на носителе и связанных между собой. Назначение: хранение и эффективный доступ. Предметная область — часть реального мира. Технология БД — методы создания и ведения БД.",
+        2: "Хранение информации, управление данными (добавление/изменение/удаление), доступ (быстрый поиск), анализ данных (агрегация, отчёты), управление связями (целостность ссылок).",
+        3: "Таблицы (основные объекты), индексы (ускоряют поиск), представления (виртуальные таблицы на основе запросов).",
+        4: "Реляционные (таблицы, SQL), нереляционные (NoSQL: документные, ключ-значение), объектно-ориентированные (данные+методы), временные (исторические), многомодельные.",
+        5: "Целостность (точность данных), независимость данных (изменение структуры не ломает приложения), нормализация (устранение избыточности), связи между таблицами (1:1, 1:M, M:N).",
+        6: "Предметная область — фрагмент реальности (университет, магазин). Анализ: выявление сущностей, атрибутов, связей и ограничений для проектирования.",
+        7: "Цель: создать независимую от СУБД модель. Задачи: описать сущности, атрибуты, связи. Этапы: сбор требований → выделение сущностей → связи → ER-диаграмма. Результат: инфологическая модель.",
+        8: "Цель: преобразовать инфологическую модель в структуру конкретной СУБД (реляционную). Результат: логическая схема БД (таблицы, ключи, нормализация).",
+        9: "Цель: оптимизация производительности (размещение на диске, индексы). Результат: физическая схема БД (файлы, индексы, параметры).",
+        10: "Сущность (прямоугольник) — объект. Атрибут (овал) — свойство, ключевые подчёркнуты. Связь (ромб) — 1:1, 1:N, M:N. Графические обозначения стандартны.",
+        11: "Все атрибуты атомарны (нет множеств или составных значений). Требования: нет повторяющихся групп. Пример: телефон не '123,456', а две записи.",
+        12: "Находится в 1НФ, и все неключевые атрибуты зависят от полного первичного ключа (нет частичной зависимости).",
+        13: "В 2НФ и нет транзитивных зависимостей (неключевой атрибут не зависит от другого неключевого).",
+        14: "Записи (узлы) и связи (наборы). Допускает связи «многие ко многим». Графически — граф. Пример: студент связан с несколькими курсами и наоборот.",
+        15: "Основные понятия: отношения (таблицы), кортежи (строки), атрибуты (столбцы), первичный и внешний ключи. Графически — таблица.",
+        16: "Объекты, классы, наследование, инкапсуляция, методы. Графически: UML-диаграммы. Пример: класс «Сотрудник» с полями и методом.",
+        17: "СУБД — система управления БД. Однозвенная (файл-серверная), двухзвенная (клиент-сервер), трёхзвенная (клиент → сервер приложений → сервер БД).",
+        18: "SQL — структурированный язык запросов. DDL (CREATE, ALTER, DROP) — определение структуры. DML (SELECT, INSERT, UPDATE, DELETE) — манипуляция данными.",
+        19: "DCL (GRANT, REVOKE) — управление правами. TCL (COMMIT, ROLLBACK, SAVEPOINT) — управление транзакциями.",
+        20: "CHAR(n) — фикс. длина, дополняется пробелами. VARCHAR(n) — переменная длина. TEXT — длинный текст.",
+        21: "DATE — дата, TIME — время, DATETIME — дата+время, BOOLEAN — TRUE/FALSE.",
+        22: "DECIMAL(p,s) — точное число (p цифр всего, s после запятой). FLOAT — прибл. число (4 байта), DOUBLE — двойной точности (8 байт).",
+        23: "CREATE TABLE имя (поля с типами, PRIMARY KEY, AUTOINCREMENT, NOT NULL, UNIQUE); DROP TABLE имя; Пример: CREATE TABLE Users (id INT PRIMARY KEY, name VARCHAR(50) NOT NULL);",
+        24: "Индекс ускоряет поиск. Создание: CREATE INDEX idx_name ON table(col); Удаление: DROP INDEX idx_name;",
+        25: "ALTER TABLE добавляет, удаляет или изменяет столбцы. Пример: ALTER TABLE Users ADD age INT;",
+        26: "INSERT INTO table (columns) VALUES (values); Пример: INSERT INTO Users (id,name) VALUES (1,'Иван');",
+        27: "SELECT * FROM table; или SELECT column1, column2 FROM table WHERE условие;",
+        28: "WHERE — фильтр. ORDER BY — сортировка (ASC по возрастанию, DESC по убыванию). COUNT — количество строк. Пример: SELECT COUNT(*) FROM Users WHERE age>18 ORDER BY name ASC;",
+        29: "IN (список значений), BETWEEN (диапазон), LIKE (шаблон %_ ), IS NULL (проверка на пустое значение).",
+        30: "Числовые (5, 3.14), символьные ('hello'). Арифметика: +-*/. Конкатенация: || или CONCAT. Пример: 'a'||'b' → 'ab'.",
+        31: "LOWER → нижний регистр, UPPER → верхний, INITCAP → первая буква каждого слова заглавная. Пример: UPPER('abc') → 'ABC'.",
+        32: "SUBSTR(стр, поз, длина) — подстрока; INSTR(стр, подстр) — позиция; LENGTH — длина строки.",
+        33: "ABS — модуль, FLOOR — округление вниз, CEIL — вверх, ROUND — до разряда, TRUNC — отсечение дробной части.",
+        34: "Тригонометрические (COS,SIN,TAN), EXP(e^x), LOG(натуральный), POWER(степень), SQRT(корень).",
+        35: "COUNT, SUM, AVG, MAX, MIN — агрегатные функции. GROUP BY группирует строки. Пример: SELECT city, AVG(age) FROM Users GROUP BY city;",
+        36: "SELECT внутри другого SELECT. Связанный подзапрос ссылается на внешний запрос. Пример: WHERE age > (SELECT AVG(age) FROM Users WHERE city = u.city);",
+        37: "Подзапрос пишется в WHERE/HAVING/SELECT и содержит ссылку на столбец внешнего запроса. Пример: выбор товаров дороже среднего по категории.",
+        38: "INSERT — добавление, UPDATE — изменение, DELETE — удаление. Пример: UPDATE Users SET name='Петя' WHERE id=2; DELETE FROM Users WHERE id=2;"
+    };
+
+    // ========== ТЕСТОВЫЕ ВОПРОСЫ С ОСМЫСЛЕННЫМИ ВАРИАНТАМИ ==========
+    // Каждый вопрос: текст вопроса, массив вариантов (4 шт), индекс правильного ответа (0..3)
+    const testQuestions = [
+        { text: "1. Что такое база данных (БД)?", 
+          options: [
+              "Структурированная совокупность данных, хранимых на носителе и связанных между собой",
+              "Набор неструктурированных файлов на диске",
+              "Система управления базами данных (СУБД)",
+              "Язык программирования для работы с данными"
+          ], correct: 0 },
+        { text: "2. Какие задачи решают базы данных?", 
+          options: [
+              "Хранение, управление, доступ, анализ данных, управление связями",
+              "Только хранение данных",
+              "Создание 3D-графики и анимации",
+              "Компиляция программного кода"
+          ], correct: 0 },
+        { text: "3. Из каких структур состоит база данных?", 
+          options: [
+              "Таблицы, индексы, представления",
+              "Только таблицы",
+              "Файлы и папки",
+              "Классы и объекты"
+          ], correct: 0 },
+        { text: "4. Какие виды баз данных существуют?", 
+          options: [
+              "Реляционные, нереляционные, объектно-ориентированные, временные, многомодельные",
+              "Только реляционные",
+              "Графовые и иерархические (без других)",
+              "Файловые и сетевые"
+          ], correct: 0 },
+        { text: "5. Назовите основные принципы организации БД.", 
+          options: [
+              "Целостность, независимость данных, нормализация, связи между таблицами",
+              "Скорость доступа, шифрование, сжатие",
+              "Резервное копирование, репликация, шардинг",
+              "Транзакционность, атомарность, согласованность"
+          ], correct: 0 },
+        { text: "6. Что такое предметная область БД и её анализ?", 
+          options: [
+              "Фрагмент реальности (университет, магазин); анализ: выявление сущностей, атрибутов, связей",
+              "Совокупность всех таблиц БД",
+              "Программа для проектирования БД",
+              "Модель данных, описывающая только ключи"
+          ], correct: 0 },
+        { text: "7. Что такое инфологическое проектирование БД?", 
+          options: [
+              "Создание независимой от СУБД модели: сущности, атрибуты, связи, ER-диаграмма",
+              "Размещение файлов БД на диске",
+              "Оптимизация запросов",
+              "Назначение прав доступа"
+          ], correct: 0 },
+        { text: "8. Что такое логическое проектирование БД?", 
+          options: [
+              "Преобразование инфологической модели в структуру конкретной СУБД (таблицы, ключи)",
+              "Физическое расположение данных",
+              "Создание резервных копий",
+              "Написание SQL-скриптов"
+          ], correct: 0 },
+        { text: "9. Что такое физическое проектирование БД?", 
+          options: [
+              "Оптимизация производительности: размещение на диске, индексы, параметры",
+              "Рисование ER-диаграммы",
+              "Определение сущностей и связей",
+              "Разработка пользовательского интерфейса"
+          ], correct: 0 },
+        { text: "10. Опишите модель «Сущность-связь» (ER).", 
+          options: [
+              "Сущность (□), атрибут (○), связь (◊); связи 1:1, 1:N, M:N",
+              "Таблицы и столбцы",
+              "Граф с узлами и рёбрами",
+              "Иерархическое дерево"
+          ], correct: 0 },
+        { text: "11. Что такое первая нормальная форма (1НФ)?", 
+          options: [
+              "Все атрибуты атомарны, нет повторяющихся групп",
+              "Нет частичной зависимости от первичного ключа",
+              "Нет транзитивных зависимостей",
+              "Все таблицы имеют первичный ключ"
+          ], correct: 0 },
+        { text: "12. Что такое вторая нормальная форма (2НФ)?", 
+          options: [
+              "1НФ + отсутствие частичной зависимости неключевых атрибутов от части составного ключа",
+              "1НФ + нет транзитивных зависимостей",
+              "Просто 1НФ",
+              "Все атрибуты зависят от первичного ключа"
+          ], correct: 0 },
+        { text: "13. Что такое третья нормальная форма (3НФ)?", 
+          options: [
+              "2НФ + отсутствие транзитивных зависимостей (неключевой атрибут не зависит от другого неключевого)",
+              "1НФ + атомарность",
+              "Все атрибуты — ключевые",
+              "Нет повторяющихся строк"
+          ], correct: 0 },
+        { text: "14. Опишите сетевую модель данных.", 
+          options: [
+              "Записи (узлы) и связи (наборы); допускает связи «многие ко многим», граф",
+              "Таблицы с внешними ключами",
+              "Иерархическое дерево",
+              "Объекты с методами"
+          ], correct: 0 },
+        { text: "15. Опишите реляционную модель данных.", 
+          options: [
+              "Отношения (таблицы), кортежи (строки), атрибуты (столбцы), первичный и внешний ключи",
+              "Графовая структура",
+              "Документы JSON",
+              "Иерархия папок"
+          ], correct: 0 },
+        { text: "16. Опишите объектно-ориентированную модель данных.", 
+          options: [
+              "Объекты, классы, наследование, инкапсуляция, методы; UML-диаграммы",
+              "Только таблицы",
+              "Сетевые графы",
+              "Ключ-значение"
+          ], correct: 0 },
+        { text: "17. Что такое СУБД и какие бывают архитектуры (однозвенная, двухзвенная, трёхзвенная)?", 
+          options: [
+              "Система управления БД. Однозвенная (файл-сервер), двухзвенная (клиент-сервер), трёхзвенная (клиент → сервер приложений → сервер БД)",
+              "Только клиент-серверная",
+              "Только файл-серверная",
+              "Монолитная и микросервисная"
+          ], correct: 0 },
+        { text: "18. Что такое SQL? Раскройте DDL и DML.", 
+          options: [
+              "Структурированный язык запросов. DDL (CREATE, ALTER, DROP) — определение структуры; DML (SELECT, INSERT, UPDATE, DELETE) — манипуляция данными",
+              "Только SELECT",
+              "Язык программирования",
+              "DCL и TCL"
+          ], correct: 0 },
+        { text: "19. Раскройте DCL и TCL в SQL.", 
+          options: [
+              "DCL (GRANT, REVOKE) — управление правами; TCL (COMMIT, ROLLBACK, SAVEPOINT) — управление транзакциями",
+              "Только GRANT",
+              "Только COMMIT",
+              "DDL и DML"
+          ], correct: 0 },
+        { text: "20. Что означают типы данных CHAR(n), VARCHAR(n), TEXT?", 
+          options: [
+              "CHAR(n) — фикс. длина с пробелами, VARCHAR(n) — переменная длина, TEXT — длинный текст",
+              "Все одно и то же",
+              "Только числовые типы",
+              "Дата и время"
+          ], correct: 0 },
+        { text: "21. Что означают типы DATE, TIME, DATETIME, BOOLEAN?", 
+          options: [
+              "DATE — дата, TIME — время, DATETIME — дата+время, BOOLEAN — TRUE/FALSE",
+              "Только время",
+              "Строковые типы",
+              "Двоичные данные"
+          ], correct: 0 },
+        { text: "22. Что означают DECIMAL(p,s), FLOAT, DOUBLE?", 
+          options: [
+              "DECIMAL(p,s) — точное число (p цифр, s после запятой); FLOAT (4 байта), DOUBLE (8 байт) — приближённые",
+              "Только целые числа",
+              "Только текст",
+              "Только даты"
+          ], correct: 0 },
+        { text: "23. Как создать и удалить таблицу? Приведите пример CREATE TABLE / DROP TABLE.", 
+          options: [
+              "CREATE TABLE имя (поля с типами, PRIMARY KEY, NOT NULL...); DROP TABLE имя; Пример: CREATE TABLE Users (id INT PRIMARY KEY, name VARCHAR(50))",
+              "Только DROP",
+              "Используя INSERT",
+              "С помощью SELECT"
+          ], correct: 0 },
+        { text: "24. Что такое индексация полей? Как создать и удалить индекс?", 
+          options: [
+              "Индекс ускоряет поиск. CREATE INDEX idx_name ON table(col); DROP INDEX idx_name;",
+              "Индекс замедляет вставку, его лучше не использовать",
+              "Индекс — это первичный ключ",
+              "Только автоматическая индексация"
+          ], correct: 0 },
+        { text: "25. Как изменить структуру существующей таблицы (ALTER TABLE)?", 
+          options: [
+              "ALTER TABLE добавляет, удаляет, изменяет столбцы. Пример: ALTER TABLE Users ADD age INT;",
+              "Только удаление строк",
+              "UPDATE TABLE",
+              "SELECT INTO"
+          ], correct: 0 },
+        { text: "26. Как выполнить вставку данных в таблицу (INSERT)?", 
+          options: [
+              "INSERT INTO table (columns) VALUES (values); Пример: INSERT INTO Users (id,name) VALUES (1,'Иван');",
+              "SELECT INTO",
+              "UPDATE",
+              "CREATE"
+          ], correct: 0 },
+        { text: "27. Как выполнить выборку данных (SELECT)?", 
+          options: [
+              "SELECT * FROM table; или SELECT column1, column2 FROM table WHERE условие;",
+              "INSERT INTO",
+              "DELETE",
+              "ALTER"
+          ], correct: 0 },
+        { text: "28. Для чего нужны WHERE, ORDER BY, ASC, DESC, COUNT? Приведите пример.", 
+          options: [
+              "WHERE — фильтр, ORDER BY — сортировка (ASC по возрастанию, DESC по убыванию), COUNT — количество строк. Пример: SELECT COUNT(*) FROM Users WHERE age>18 ORDER BY name ASC;",
+              "Только для группировки",
+              "Для объединения таблиц",
+              "Для создания индексов"
+          ], correct: 0 },
+        { text: "29. Что делают операторы IN, BETWEEN, LIKE, IS NULL?", 
+          options: [
+              "IN (список значений), BETWEEN (диапазон), LIKE (шаблон), IS NULL (проверка на пустое значение)",
+              "Только сравнение",
+              "Арифметические операции",
+              "Функции агрегации"
+          ], correct: 0 },
+        { text: "30. Что такое числовые, символьные константы, арифметические операции и конкатенация строк в SQL?", 
+          options: [
+              "Числовые (5, 3.14), символьные ('hello'), арифметика +-*/, конкатенация || или CONCAT. Пример: 'a'||'b' → 'ab'",
+              "Только числа",
+              "Только строки",
+              "Логические операции"
+          ], correct: 0 },
+        { text: "31. Назовите функции преобразования символов в строке: LOWER, UPPER, INITCAP. Приведите пример.", 
+          options: [
+              "LOWER → нижний регистр, UPPER → верхний, INITCAP → первая буква заглавная. Пример: UPPER('abc') → 'ABC'",
+              "Только LOWER",
+              "Работа с числами",
+              "Агрегатные функции"
+          ], correct: 0 },
+        { text: "32. Назовите функции работы со строками: SUBSTR, INSTR, LENGTH.", 
+          options: [
+              "SUBSTR(стр, поз, длина) — подстрока; INSTR(стр, подстр) — позиция; LENGTH — длина строки",
+              "Только LENGTH",
+              "Математические функции",
+              "Функции даты"
+          ], correct: 0 },
+        { text: "33. Назовите числовые функции: ABS, FLOOR, CEIL, ROUND, TRUNC.", 
+          options: [
+              "ABS — модуль, FLOOR — округление вниз, CEIL — вверх, ROUND — до разряда, TRUNC — отсечение дробной части",
+              "Только ROUND",
+              "Тригонометрические",
+              "Строковые"
+          ], correct: 0 },
+        { text: "34. Назовите математические функции: COS, SIN, TAN, EXP, LOG, POWER, SQRT.", 
+          options: [
+              "Тригонометрические, EXP(e^x), LOG(натуральный), POWER(степень), SQRT(корень)",
+              "Только степень",
+              "Только логарифм",
+              "Агрегатные"
+          ], correct: 0 },
+        { text: "35. Что такое агрегирование и групповые функции (COUNT, SUM, AVG, MAX, MIN) и предложение GROUP BY?", 
+          options: [
+              "COUNT, SUM, AVG, MAX, MIN — агрегатные функции. GROUP BY группирует строки. Пример: SELECT city, AVG(age) FROM Users GROUP BY city;",
+              "Только COUNT",
+              "Только SUM",
+              "Для сортировки"
+          ], correct: 0 },
+        { text: "36. Что такое вложенные подзапросы? Приведите пример связанного подзапроса.", 
+          options: [
+              "SELECT внутри другого SELECT. Связанный подзапрос ссылается на внешний. Пример: WHERE age > (SELECT AVG(age) FROM Users WHERE city = u.city);",
+              "Только простые подзапросы",
+              "Подзапросы не могут быть связанными",
+              "Это JOIN"
+          ], correct: 0 },
+        { text: "37. Как формируются связанные подзапросы? Приведите пример.", 
+          options: [
+              "Подзапрос пишется в WHERE/HAVING/SELECT и содержит ссылку на столбец внешнего запроса. Пример: выбор товаров дороже среднего по категории.",
+              "Только в SELECT",
+              "Только в FROM",
+              "Не могут ссылаться на внешний запрос"
+          ], correct: 0 },
+        { text: "38. Назовите команды манипулирования данными: INSERT, UPDATE, DELETE. Приведите примеры.", 
+          options: [
+              "INSERT — добавление, UPDATE — изменение, DELETE — удаление. Пример: UPDATE Users SET name='Петя' WHERE id=2; DELETE FROM Users WHERE id=2;",
+              "Только SELECT",
+              "Только CREATE",
+              "Только DROP"
+          ], correct: 0 }
+    ];
+
+    // ========== ОТРИСОВКА ТЕОРИИ ==========
+    function renderTheory() {
+        let html = `<h1>📚 Теория по курсу «Технологии баз данных»</h1>
+                    <div class="theory-card"><div class="theory-list">`;
+        for (let i = 1; i <= 38; i++) {
+            html += `<div class="theory-item">
+                        <div class="theory-question">${i}. ${testQuestions[i-1].text}</div>
+                        <div class="theory-answer">${theoryData[i]}</div>
+                     </div>`;
+        }
+        html += `</div></div><footer>Тувинский государственный университет | Фундаментальная информатика и ИТ, 4 семестр</footer>`;
+        document.getElementById('content-right').innerHTML = html;
+    }
+
+    // ========== ОТРИСОВКА ТЕСТА ==========
+    function renderQuiz() {
+        let formHtml = `<h1>📝 Экзаменационный тест (38 вопросов)</h1>
+                        <div class="quiz-block">
+                            <h3>Выберите правильный ответ на каждый вопрос. После завершения увидите список ошибок.</h3>
+                            <div id="test-container"></div>
+                            <button id="submit-test" class="quiz-btn" style="margin-top:20px">✅ Завершить тест</button>
+                        </div>
+                        <div id="result-area"></div>
+                        <footer>Тувинский государственный университет | Фундаментальная информатика и ИТ</footer>`;
+        document.getElementById('content-right').innerHTML = formHtml;
+        
+        const container = document.getElementById('test-container');
+        let questionsHtml = '';
+        testQuestions.forEach((q, idx) => {
+            questionsHtml += `<div class="quiz-question">
+                                <p>${q.text}</p>`;
+            q.options.forEach((opt, optIdx) => {
+                questionsHtml += `<label>
+                                    <input type="radio" name="q${idx}" value="${optIdx}">
+                                    ${opt}
+                                  </label>`;
+            });
+            questionsHtml += `</div>`;
+        });
+        container.innerHTML = questionsHtml;
+
+        document.getElementById('submit-test').addEventListener('click', () => {
+            let score = 0;
+            const errors = [];
+            for (let i = 0; i < testQuestions.length; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                const selectedIdx = selected ? parseInt(selected.value) : -1;
+                const q = testQuestions[i];
+                if (selectedIdx === q.correct) {
+                    score++;
+                } else {
+                    const selectedText = (selectedIdx === -1) ? "Не выбран" : q.options[selectedIdx];
+                    errors.push({
+                        number: i+1,
+                        questionText: q.text,
+                        selected: selectedText,
+                        correct: q.options[q.correct]
+                    });
+                }
+            }
+            const percent = Math.round((score / testQuestions.length) * 100);
+            let resultHtml = `<div class="result-block">
+                                <h3>📊 Результат: ${score} из ${testQuestions.length} (${percent}%)</h3>`;
+            if (errors.length === 0) {
+                resultHtml += `<p style="color:green; font-weight:bold;">🎉 Превосходно! Все ответы верны.</p>`;
+            } else {
+                resultHtml += `<p style="color:#c0392b;">❌ Ошибки в следующих вопросах (${errors.length}):</p>`;
+                errors.forEach(err => {
+                    resultHtml += `<div class="error-item">
+                                    <strong>Вопрос №${err.number}:</strong> ${err.questionText}<br>
+                                    <span style="color:#e74c3c;">✗ Ваш ответ: ${err.selected}</span><br>
+                                    <span style="color:#27ae60;">✓ Правильный ответ: ${err.correct}</span>
+                                   </div>`;
+                });
+            }
+            resultHtml += `</div>`;
+            document.getElementById('result-area').innerHTML = resultHtml;
+            document.getElementById('result-area').scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
+    // ========== НАВИГАЦИЯ ==========
+    function navigate(page) {
+        if (page === 'theory') {
+            renderTheory();
+        } else if (page === 'quiz') {
+            renderQuiz();
+        }
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.page === page);
+        });
+    }
+
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => navigate(item.dataset.page));
+    });
+    navigate('theory');
+</script>
+</body>
+</html>
