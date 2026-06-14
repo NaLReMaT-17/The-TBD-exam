@@ -8,17 +8,21 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Roboto, sans-serif; background: #eef2f5; line-height: 1.5; }
         .app-container { display: flex; min-height: 100vh; width: 100%; }
-        .sidebar-left { width: 260px; background: #2c3e50; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
-        .nav-item { padding: 18px 25px; cursor: pointer; color: #ecf0f1; font-size: 1.3rem; font-weight: 500; border-left: 4px solid transparent; transition: 0.2s; }
+        .sidebar-left { width: 280px; background: #2c3e50; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        .nav-item { padding: 18px 25px; cursor: pointer; color: #ecf0f1; font-size: 1.2rem; font-weight: 500; border-left: 4px solid transparent; transition: 0.2s; }
         .nav-item:hover, .nav-item.active { background: #1e2a36; color: white; border-left-color: #4caf50; }
         .content-right { flex: 1; padding: 30px 35px; background: #eef2f5; overflow-y: auto; }
-        .theory-card, .quiz-block { background: white; border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .theory-card, .quiz-block, .questions-card { background: white; border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         h1 { font-size: 2rem; margin-bottom: 1rem; color: #2c3e50; border-left: 6px solid #4caf50; padding-left: 20px; }
         h3 { font-size: 1.3rem; margin-bottom: 15px; color: #2980b9; }
         .theory-list { display: flex; flex-direction: column; gap: 14px; }
         .theory-item { background: #f9fafc; border-radius: 16px; padding: 15px 20px; border-left: 5px solid #3498db; }
         .theory-question { font-weight: 800; font-size: 1.1rem; color: #1e4663; margin-bottom: 8px; }
         .theory-answer { color: #2c3e50; font-size: 1rem; }
+        .questions-list { display: flex; flex-direction: column; gap: 12px; }
+        .question-item { background: #f9fafc; border-radius: 12px; padding: 12px 18px; border-left: 4px solid #9b59b6; }
+        .question-number { font-weight: 800; color: #8e44ad; margin-right: 10px; }
+        .question-text { color: #2c3e50; }
         .quiz-question { background: #f9f9f9; padding: 18px; border-radius: 18px; margin-bottom: 20px; border: 1px solid #e0e7ed; }
         .quiz-question p { font-weight: 700; margin-bottom: 10px; font-size: 1.05rem; }
         .quiz-question label { display: block; margin: 8px 0 8px 24px; cursor: pointer; }
@@ -30,7 +34,7 @@
         footer { text-align: center; margin-top: 40px; padding-top: 20px; color: #7f8c8d; border-top: 1px solid #d0dbe8; }
         @media (max-width: 800px) {
             .app-container { flex-direction: column; }
-            .sidebar-left { width: 100%; display: flex; justify-content: center; }
+            .sidebar-left { width: 100%; display: flex; justify-content: center; flex-wrap: wrap; }
             .nav-item { display: inline-block; text-align: center; flex: 1; }
             .content-right { padding: 20px; }
             h1 { font-size: 1.6rem; }
@@ -41,6 +45,7 @@
 <div class="app-container">
     <div class="sidebar-left">
         <div class="nav-item active" data-page="theory">📘 Теория (1–38)</div>
+        <div class="nav-item" data-page="questions">📋 Вопросы (список)</div>
         <div class="nav-item" data-page="quiz">📝 Тест по билетам</div>
     </div>
     <div class="content-right" id="content-right"></div>
@@ -88,6 +93,48 @@
         37: "Связанный подзапрос формируется следующим образом: он размещается в условиях WHERE, HAVING или в списке SELECT внешнего запроса и содержит ссылку на столбец (алиас) из внешнего запроса. Пример: выбрать товары, цена которых выше средней цены товаров в той же категории: SELECT * FROM Products p WHERE price > (SELECT AVG(price) FROM Products WHERE category = p.category);",
         38: "Команды манипулирования данными (DML): INSERT — добавление новых строк; UPDATE — изменение существующих строк; DELETE — удаление строк. Примеры: INSERT INTO Users (id, name) VALUES (2, 'Петр'); UPDATE Users SET name = 'Петя' WHERE id = 2; DELETE FROM Users WHERE id = 2;"
     };
+
+    // ========== ИСХОДНЫЕ ВОПРОСЫ ИЗ ДОКУМЕНТА (без изменений) ==========
+    const originalQuestions = [
+        "Понятие баз данных (далее БД) (определение, назначение, предметная область, технология БД).",
+        "Задачи БД (хранение информации, управление данными, доступ, анализ данных, управление связями).",
+        "Структура БД (таблицы, индексы, представления).",
+        "Виды БД (реляционные, не реляционные, объектно-ориентированные, временные, многомодельные).",
+        "Принципы организации БД (целостность и независимость данных, нормализация, связи между таблицами).",
+        "Предметная область БД. Анализ предметной области.",
+        "Проектирование БД (информационно-логическое проектирование: цель, задачи, этапы, результат).",
+        "Проектирование БД (логическое проектирование: цель, результат).",
+        "Проектирование БД (физическое проектирование: цель, результат).",
+        "Инфологическая модель данных «Сущность-связь» (язык ER-диаграмм, Сущность, атрибут, связь, графические обозначения).",
+        "Первая нормальная форма реляционной модели данных (Определение, требования, примеры).",
+        "Вторая нормальная форма реляционной модели (Определение, требования, примеры).",
+        "Третья нормальная форма реляционной модели данных (Определение, требования, примеры).",
+        "Понятие модели базы данных (сетевая модель данных: основные понятия, графическое изображение, примеры).",
+        "Понятие модели базы данных (реляционная модель данных: основные понятия, графическое изображение, примеры).",
+        "Понятие модели базы данных (объектно-ориентированная модель данных: основные понятия, графическое изображение, примеры).",
+        "Понятие системы управления базами данных (далее СУБД) (определение, однозвенная, двухзвенная и трехзвенная СУБД).",
+        "Структурированный язык запросов SQL. DDL и DML (определение, расшифровка, основные команды).",
+        "Структурированный язык запросов SQL. DСL и ТСL (определение, расшифровка, основные команды).",
+        "Типы данных SQL (CHAR(n), VARCHAR(n), TEXT) (что такое тип данных, для чего нужен, что за типы данных в скобках).",
+        "Типы данных SQL (DATE, TIME, DATETIME, BOOLEAN) (что такое тип данных, для чего нужен, что за типы данных в скобках).",
+        "Типы данных SQL (DECIMAL(p, s) или NUMERIC(p, s), FLOAT, DOUBLE) (что такое тип данных, для чего нужен, что за типы данных в скобках).",
+        "Создание и удаление таблиц БД в SQL (CREATE TABLE, DROP TABLE, имя таблицы, поля и их типы, размер поля, PRIMARY KEY, AUTOINCREMENT, UNIQUE ,NOT NULL, показать пример).",
+        "Индексация полей таблиц (что такое индексное поле, как создаются и удаляются индексные поля, показать пример).",
+        "Изменение структуры существующей таблицы (что такое структура таблицы, какая команда используется для изменения структуры таблицы, что именно изменяется, показать пример).",
+        "Запись данных в таблицу (что такое запись данных в таблицу, какая команда используется, показать пример).",
+        "Выборка данных (оператор SELECT) (что такое выборка данных, какая команда используется, показать пример).",
+        "Запрос SQL с использованием команд WHERE, ORDER BY, ASC, DESC, COUNT (что за команды, как они используются, показать пример).",
+        "Операторы IN, BETWEEN, LIKE, IS NULL (что за операторы, как они используются, показать пример).",
+        "Числовые, символьные и строковые константы, арифметические операции, операция конкатенации строк (что за операторы, как они используются, показать пример).",
+        "Функции SQL преобразования символов в строке (LOWER, UPPER, INITCAP) (что за функции, как они используются, показать пример).",
+        "Функции SQL преобразования символов в строке (SUBSTR, INSTR, LENGTH) (что за функции, как они используются, показать пример).",
+        "Функции SQL для работы с числами (ABS, FLOOR, CEIL, ROUND, TRUNC) (что за функции, как они используются, показать пример).",
+        "Функции SQL для работы с числами (COS, SIN, TAN, ЕХР, LOG, POWER, SQRT) (что за функции, как они используются, показать пример).",
+        "Агрегирование и групповые функции в SQL (COUNT, SUM, AVG, МАХ, MIN, Предложение GROUP BY) (что за функции, как они используются, показать пример).",
+        "Вложенные подзапросы в SQL (что это такое, Как работает запрос SQL со связанным подзапросом?, показать пример).",
+        "Формирование связанных подзапросов в SQL (как формировать?, показать пример).",
+        "Команды манипулирования данными в SQL (INSERT, UPDATE, и DELETE, показать примеры их применения)."
+    ];
 
     // ========== ТЕСТОВЫЕ ВОПРОСЫ С ОСМЫСЛЕННЫМИ ВАРИАНТАМИ ==========
     const testQuestions = [
@@ -373,6 +420,22 @@
         document.getElementById('content-right').innerHTML = html;
     }
 
+    // ========== ОТРИСОВКА СПИСКА ВОПРОСОВ (как в документе, без изменений) ==========
+    function renderQuestions() {
+        let html = `<h1>📋 Список экзаменационных вопросов</h1>
+                    <div class="questions-card">
+                        <p style="margin-bottom: 20px; color: #555; font-style: italic;">Вопросы из экзаменационного билета (в исходном виде)</p>
+                        <div class="questions-list">`;
+        for (let i = 0; i < originalQuestions.length; i++) {
+            html += `<div class="question-item">
+                        <span class="question-number">${i+1}.</span>
+                        <span class="question-text">${originalQuestions[i]}</span>
+                     </div>`;
+        }
+        html += `</div></div><footer>Тувинский государственный университет | Фундаментальная информатика и ИТ, 4 семестр</footer>`;
+        document.getElementById('content-right').innerHTML = html;
+    }
+
     // ========== ОТРИСОВКА ТЕСТА ==========
     function renderQuiz() {
         let formHtml = `<h1>📝 Экзаменационный тест (38 вопросов)</h1>
@@ -444,6 +507,8 @@
     function navigate(page) {
         if (page === 'theory') {
             renderTheory();
+        } else if (page === 'questions') {
+            renderQuestions();
         } else if (page === 'quiz') {
             renderQuiz();
         }
